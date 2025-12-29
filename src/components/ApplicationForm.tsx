@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Send, Upload, CheckCircle, Loader2 } from 'lucide-react';
+import { createClient } from '@supabase/supabase-js';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
 
 interface Division {
@@ -21,7 +22,6 @@ export function ApplicationForm({ divisions }: ApplicationFormProps) {
     semester: '2', 
     ipk: '-',
     motivation: '-',
-    // -------------------------------------
     department1: '',
     proker1: '',
     department2: '',
@@ -29,11 +29,9 @@ export function ApplicationForm({ divisions }: ApplicationFormProps) {
     experience: ''
   });
 
-  // Sekben toggle per pilihan
   const [isSekben1, setIsSekben1] = useState(false);
   const [isSekben2, setIsSekben2] = useState(false);
 
-  // File upload states
   const [ktmFile, setKtmFile] = useState<File | null>(null);
   const [suratKomitmenFile, setSuratKomitmenFile] = useState<File | null>(null);
   const [cvFile, setCvFile] = useState<File | null>(null);
@@ -44,7 +42,9 @@ export function ApplicationForm({ divisions }: ApplicationFormProps) {
   const [error, setError] = useState('');
   const [applicationId, setApplicationId] = useState('');
 
-  // Flat list of all prokers
+  // Initialize Supabase client
+  const supabase = createClient(projectId, publicAnonKey);
+
   const allProkers = divisions.flatMap(dept => 
     dept.requirements.map(proker => ({
       prokerName: proker,
@@ -52,26 +52,71 @@ export function ApplicationForm({ divisions }: ApplicationFormProps) {
     }))
   );
   
-  // Check if needs portfolio (MEDINFO except Copywriting)
   const needsPortfolio = (formData.department1 === 'Departemen MEDINFO' && formData.proker1 !== 'Copywriting') ||
                          (formData.department2 === 'Departemen MEDINFO' && formData.proker2 !== 'Copywriting');
   
-  // Non-Sekben departments (exclude Sekretaris Bendahara)
   const nonSekbenDepartments = divisions.filter(d => d.id !== 1);
   
-  // Get prokers for selected department
   const getProkersByDepartment = (deptTitle: string) => {
     const dept = divisions.find(d => d.title === deptTitle);
     return dept ? dept.requirements : [];
+  };
+
+  // ===== UPLOAD FILES TO SUPABASE STORAGE =====
+  const uploadFilesToStorage = async (nim: string) => {
+    const uploadedFiles: Record<string, string> = {};
+    const filesToUpload = {
+      ktm: ktmFile,
+      surat_komitmen: suratKomitmenFile,
+      cv: cvFile,
+      portofolio: portfolioFile,
+    };
+
+    try {
+      for (const [fileType, file] of Object.entries(filesToUpload)) {
+        if (!file) continue;
+        
+        const fileName = `${Date.now()}-${file.name}`;
+        const filePath = `applications/${nim}/${fileType}/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('application-files')
+          .upload(filePath, file);
+
+        if (uploadError) throw uploadError;
+
+        const { data: publicUrlData } = supabase.storage
+          .from('application-files')
+          .getPublicUrl(filePath);
+
+        uploadedFiles[fileType] = publicUrlData.publicUrl;
+      }
+
+      return uploadedFiles;
+    } catch (err) {
+      throw err;
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
-    
+
     try {
-      // Menggunakan URL original (make-server-0b66b71b) biar pasti jalan dengan backend lama/baru
+      // ===== STEP 1: Validate files =====
+      if (!ktmFile || !suratKomitmenFile || !cvFile) {
+        throw new Error('Silakan upload KTM, Surat Komitmen, dan CV terlebih dahulu');
+      }
+
+      if (needsPortfolio && !portfolioFile) {
+        throw new Error('Portofolio wajib untuk proker MEDINFO');
+      }
+
+      // ===== STEP 2: Upload files to Supabase Storage =====
+      const uploadedFiles = await uploadFilesToStorage(formData.nim);
+
+      // ===== STEP 3: Submit form + file URLs =====
       const response = await fetch(
         `https://${projectId}.supabase.co/functions/v1/server/applications/submit`,
         {
@@ -80,7 +125,10 @@ export function ApplicationForm({ divisions }: ApplicationFormProps) {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${publicAnonKey}`,
           },
-          body: JSON.stringify(formData),
+          body: JSON.stringify({
+            ...formData,
+            files: uploadedFiles,
+          }),
         }
       );
 
@@ -93,8 +141,7 @@ export function ApplicationForm({ divisions }: ApplicationFormProps) {
       console.log('Application submitted successfully:', data);
       setApplicationId(data.applicationId);
       setSubmitted(true);
-      
-      // Reset form after 5 seconds
+
       setTimeout(() => {
         setSubmitted(false);
         setApplicationId('');
@@ -103,7 +150,6 @@ export function ApplicationForm({ divisions }: ApplicationFormProps) {
           nim: '',
           email: '',
           phone: '',
-          // Reset Ghost Inputs juga ke nilai default
           semester: '2', 
           ipk: '-',
           motivation: '-',
@@ -113,16 +159,14 @@ export function ApplicationForm({ divisions }: ApplicationFormProps) {
           proker2: '',
           experience: ''
         });
-        // Reset Sekben states
         setIsSekben1(false);
         setIsSekben2(false);
-        // Reset file states
         setKtmFile(null);
         setSuratKomitmenFile(null);
         setCvFile(null);
         setPortfolioFile(null);
       }, 5000);
-      
+
     } catch (err) {
       console.error('Error submitting application:', err);
       setError(err instanceof Error ? err.message : 'Terjadi kesalahan saat mengirim pendaftaran');
@@ -140,7 +184,8 @@ export function ApplicationForm({ divisions }: ApplicationFormProps) {
 
   if (submitted) {
     return (
-      <div className="bg-white rounded-2xl shadow-xl p-12 text-center">
+      <div className="bg-white rounded-2xl shadow-xl p-12 text-center" key="success-screen">
+      <div style={{ visibility: 'visible' }}>
         <div className="w-20 h-20 bg-gradient-to-r from-[#0D652D] to-[#34A853] rounded-full flex items-center justify-center mx-auto mb-6">
           <CheckCircle className="w-12 h-12 text-white" />
         </div>
@@ -247,14 +292,12 @@ export function ApplicationForm({ divisions }: ApplicationFormProps) {
             <div className="flex items-center justify-between mb-4">
               <h4 className="font-medium text-gray-800">📌 Pilihan 1</h4>
               
-              {/* Toggle Sekben for Pilihan 1 */}
               <label className="flex items-center cursor-pointer group">
                 <input
                   type="checkbox"
                   checked={isSekben1}
                   onChange={(e) => {
                     setIsSekben1(e.target.checked);
-                    // Reset pilihan 1
                     setFormData({
                       ...formData,
                       department1: '',
@@ -270,10 +313,8 @@ export function ApplicationForm({ divisions }: ApplicationFormProps) {
             </div>
             
             {isSekben1 ? (
-              // SEKBEN MODE: Pilih departemen + role (Sekretaris/Bendahara)
               <div className="space-y-4">
                 <div className="grid md:grid-cols-2 gap-4">
-                  {/* Department (exclude Sekben) */}
                   <div>
                     <label htmlFor="department1-sekben" className="block text-sm mb-2 text-gray-700">
                       Departemen Penempatan *
@@ -300,7 +341,6 @@ export function ApplicationForm({ divisions }: ApplicationFormProps) {
                     </select>
                   </div>
 
-                  {/* Role: Sekretaris atau Bendahara */}
                   <div>
                     <label htmlFor="sekben-role" className="block text-sm mb-2 text-gray-700">
                       Posisi *
@@ -334,9 +374,7 @@ export function ApplicationForm({ divisions }: ApplicationFormProps) {
                 )}
               </div>
             ) : (
-              // NORMAL MODE: Pilih departemen + proker
               <div className="grid md:grid-cols-2 gap-4">
-                {/* Department 1 */}
                 <div>
                   <label htmlFor="department1" className="block text-sm mb-2 text-gray-700">
                     Departemen *
@@ -364,7 +402,6 @@ export function ApplicationForm({ divisions }: ApplicationFormProps) {
                   </select>
                 </div>
 
-                {/* Proker 1 */}
                 <div>
                   <label htmlFor="proker1" className="block text-sm mb-2 text-gray-700">
                     Program Kerja *
@@ -388,7 +425,6 @@ export function ApplicationForm({ divisions }: ApplicationFormProps) {
                     </option>
                     {formData.department1 &&
                       getProkersByDepartment(formData.department1)
-                        // === FILTER ADDED: Biar ga tabrakan sama pilihan 2 ===
                         .filter(proker => !(formData.department1 === formData.department2 && proker === formData.proker2))
                         .map((proker, index) => (
                           <option key={index} value={proker}>
@@ -401,19 +437,17 @@ export function ApplicationForm({ divisions }: ApplicationFormProps) {
             )}
           </div>
 
-          {/* PILIHAN 2 - Always Normal Mode */}
+          {/* PILIHAN 2 */}
           <div className="mb-4 p-6 bg-gradient-to-br from-blue-50 to-sky-50 rounded-xl border border-blue-200">
             <div className="flex items-center justify-between mb-4">
               <h4 className="font-medium text-gray-800">📌 Pilihan 2</h4>
               
-              {/* Toggle Sekben for Pilihan 2 */}
               <label className="flex items-center cursor-pointer group">
                 <input
                   type="checkbox"
                   checked={isSekben2}
                   onChange={(e) => {
                     setIsSekben2(e.target.checked);
-                    // Reset pilihan 2
                     setFormData({
                       ...formData,
                       department2: '',
@@ -429,10 +463,8 @@ export function ApplicationForm({ divisions }: ApplicationFormProps) {
             </div>
             
             {isSekben2 ? (
-              // SEKBEN MODE: Pilih departemen + role (Sekretaris/Bendahara)
               <div className="space-y-4">
                 <div className="grid md:grid-cols-2 gap-4">
-                  {/* Department (exclude Sekben) */}
                   <div>
                     <label htmlFor="department2-sekben" className="block text-sm mb-2 text-gray-700">
                       Departemen Penempatan *
@@ -459,7 +491,6 @@ export function ApplicationForm({ divisions }: ApplicationFormProps) {
                     </select>
                   </div>
 
-                  {/* Role: Sekretaris atau Bendahara */}
                   <div>
                     <label htmlFor="sekben-role-2" className="block text-sm mb-2 text-gray-700">
                       Posisi *
@@ -485,9 +516,7 @@ export function ApplicationForm({ divisions }: ApplicationFormProps) {
                 </div>
               </div>
             ) : (
-              // NORMAL MODE: Pilih departemen + proker
               <div className="grid md:grid-cols-2 gap-4">
-                {/* Department 2 */}
                 <div>
                   <label htmlFor="department2" className="block text-sm mb-2 text-gray-700">
                     Departemen *
@@ -515,7 +544,6 @@ export function ApplicationForm({ divisions }: ApplicationFormProps) {
                   </select>
                 </div>
 
-                {/* Proker 2 */}
                 <div>
                   <label htmlFor="proker2" className="block text-sm mb-2 text-gray-700">
                     Program Kerja *
@@ -539,7 +567,6 @@ export function ApplicationForm({ divisions }: ApplicationFormProps) {
                     </option>
                     {formData.department2 &&
                       getProkersByDepartment(formData.department2)
-                        // === FILTER ADDED: Biar ga tabrakan sama pilihan 1 ===
                         .filter(proker => !(formData.department1 === formData.department2 && proker === formData.proker1))
                         .map((proker, index) => (
                           <option key={index} value={proker}>
@@ -658,7 +685,7 @@ export function ApplicationForm({ divisions }: ApplicationFormProps) {
               </div>
             </div>
 
-            {/* 4. Portofolio - Conditional for MEDINFO */}
+            {/* 4. Portofolio */}
             {needsPortfolio && (
               <div className="border-2 border-dashed border-blue-300 rounded-lg p-4 hover:border-[#4285F4] transition-colors bg-blue-50/30">
                 <div className="flex items-start gap-3">
@@ -689,7 +716,6 @@ export function ApplicationForm({ divisions }: ApplicationFormProps) {
             )}
           </div>
           
-          {/* Info box */}
           <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
             <p className="text-xs text-gray-600">
               💡 <strong>Catatan:</strong> Pastikan semua file dalam format PDF dan tidak melebihi 2MB per file. 
