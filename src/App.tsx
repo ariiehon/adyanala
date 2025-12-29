@@ -157,31 +157,46 @@ export default function App() {
               />
             </div>
 
-            {/* Navigation Menu */}
-            <div className="flex gap-1 md:gap-2 overflow-x-auto no-scrollbar">
-              {[
-                { id: 'about', label: 'Guidebook', icon: FileText },
-                { id: 'divisions', label: 'Divisi', icon: Target },
-                { id: 'requirements', label: 'Syarat', icon: ClipboardList },
-                { id: 'timeline', label: 'Timeline', icon: Calendar },
-                { id: 'form', label: 'Daftar', icon: Edit },
-                { id: 'contact', label: 'Kontak', icon: Mail }
-              ].map(({ id, label, icon: Icon }) => (
-                <button
-                  key={id}
-                  onClick={() => scrollToSection(id)}
-                  className={`flex items-center gap-2 px-3 py-2 md:px-6 md:py-2 rounded-lg transition-all duration-300 ease-in-out whitespace-nowrap ${
-                    activeTab === id 
-                      ? 'bg-gradient-to-r from-[#0D652D] to-[#34A853] text-white shadow-md scale-105' 
-                      : 'text-gray-600 hover:bg-gray-100 hover:text-[#0D652D]'
-                  }`}
-                  title={label}
-                >
-                  <Icon className={`w-4 h-4 md:w-4 md:h-4 ${activeTab === id ? 'animate-pulse' : ''}`} />
-                  <span className="hidden md:inline font-medium">{label}</span>
-                </button>
-              ))}
-            </div>
+           {/* Navigation Menu */}
+<div className="flex gap-1 md:gap-2 overflow-x-auto no-scrollbar relative">
+  {/* Animated underline indicator */}
+  <div
+    className="absolute bottom-0 h-1 bg-gradient-to-r from-[#0D652D] to-[#34A853] transition-all duration-500 ease-out"
+    style={{
+      left: activeTab === 'about' ? '0' : 
+            activeTab === 'divisions' ? 'calc(100% + 8px)' :
+            activeTab === 'requirements' ? 'calc(200% + 16px)' :
+            activeTab === 'timeline' ? 'calc(300% + 24px)' :
+            activeTab === 'form' ? 'calc(400% + 32px)' :
+            'calc(500% + 40px)',
+      width: 'calc(16.66% - 4px)',
+    }}
+  />
+
+  {[
+    { id: 'about', label: 'Guidebook', icon: FileText },
+    { id: 'divisions', label: 'Divisi', icon: Target },
+    { id: 'requirements', label: 'Syarat', icon: ClipboardList },
+    { id: 'timeline', label: 'Timeline', icon: Calendar },
+    { id: 'form', label: 'Daftar', icon: Edit },
+    { id: 'contact', label: 'Kontak', icon: Mail }
+  ].map(({ id, label, icon: Icon }) => (
+    <button
+      key={id}
+      onClick={() => scrollToSection(id)}
+      className={`flex items-center gap-2 px-3 py-2 md:px-6 md:py-2 rounded-lg transition-colors duration-300 ease-in-out whitespace-nowrap relative ${
+        activeTab === id 
+          ? 'text-[#0D652D] font-semibold' 
+          : 'text-gray-600 hover:text-[#0D652D]'
+      }`}
+      title={label}
+    >
+      <Icon className={`w-4 h-4 md:w-4 md:h-4`} />
+      <span className="hidden md:inline">{label}</span>
+    </button>
+  ))}
+</div>
+
           </div>
         </div>
       </nav>
