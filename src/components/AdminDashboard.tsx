@@ -110,7 +110,7 @@ export function AdminDashboard() {
     setError('');
     try {
       const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/server/applications/list`,
+        `https://ktarcapgygzzbkcxaosr.supabase.co/functions/v1/server/applications/list`,
         {
           method: 'GET',
           headers: {
@@ -145,7 +145,7 @@ export function AdminDashboard() {
   const fetchStats = async () => {
     try {
       const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/server/applications/stats`,
+        `https://ktarcapgygzzbkcxaosr.supabase.co/functions/v1/server/applications/stats`,
         {
           method: 'GET',
           headers: {
@@ -203,7 +203,7 @@ export function AdminDashboard() {
 
     try {
       const res = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/server/applications/${id}/status`,
+        `https://ktarcapgygzzbkcxaosr.supabase.co/functions/v1/server/applications/${id}/status`,
         {
           method: 'PATCH',
           headers: {
