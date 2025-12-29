@@ -596,7 +596,7 @@ export function ApplicationForm({ divisions }: ApplicationFormProps) {
         <div>
           <h3 className="mb-4 text-[#0D652D]">Upload Berkas</h3>
           <p className="text-sm text-gray-600 mb-4">
-            Upload semua berkas yang diperlukan dalam format PDF (max 2MB per file)
+            Upload semua berkas yang diperlukan dalammmm format PDF (max 2MB per file)
             {needsPortfolio && <span className="text-blue-600 font-medium"> - Portofolio wajib untuk proker MEDINFO (kecuali Copywriting)</span>}
           </p>
           
