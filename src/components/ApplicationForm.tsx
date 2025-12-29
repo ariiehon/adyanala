@@ -100,7 +100,7 @@ export function ApplicationForm({ divisions }: ApplicationFormProps) {
       const uploadedFiles = await uploadFilesToStorage(formData.nim);
 
       const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/server/applications/submit`,
+        `https://ktarcapgygzzbkcxaosr.supabase.co/functions/v1/server/applications/submit`,
         {
           method: 'POST',
           headers: {
