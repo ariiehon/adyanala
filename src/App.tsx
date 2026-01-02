@@ -52,6 +52,11 @@ export default function App() {
     }
   };
 
+const handleAdminLogout = () => {
+  setIsAdminAuthenticated(false);
+  setAdminPasswordInput('');
+  setLoginError('');
+};
   // --- LOGIKA TAMPILAN ADMIN ---
   if (showAdmin) {
     if (!isAdminAuthenticated) {
@@ -87,15 +92,11 @@ export default function App() {
       );
     }
 
-    return (
-      <div>
-        <div className="bg-[#174EA6] p-2 text-right">
-             <button onClick={() => setShowAdmin(false)} className="text-white text-sm hover:underline px-4">
-                Keluar dari Admin
-             </button>
-        </div>
-        <AdminDashboard />
-      </div>
+       return (
+      <AdminDashboard 
+        isAuthenticated={isAdminAuthenticated}
+        onLogout={handleAdminLogout}
+      />
     );
   }
 
@@ -124,18 +125,18 @@ export default function App() {
   };
 
   const divisions = [
-    { id: 1, title: 'Departemen Sekretaris Bendahara', description: 'Menjamin tata kelola administrasi dan keuangan organisasi yang akuntabel, transparan, dan teratur.', requirements: ['Pelatihan Kesekretariatan dan Kebendaharaan', 'Musma GD dan AD/ART'] },
-    { id: 2, title: 'Departemen PSDM', description: 'Berfokus pada pengelolaan dan penguatan hubungan internal organisasi demi terjalinnya komunikasi yang baik serta sdm organisasi yang berkompeten.', requirements: ['Upgrading', 'OSG (OSH Student Gathering)', 'Dies Natalis K3', 'Shield', 'LKMM-Pra TD', 'Welcome Wisudawan'] },
-    { id: 3, title: 'Departemen ILPRES', description: 'Menyelenggarakan program kerja yang berkaitan dengan bidang keilmuan dan prestasi Mahasiswa-Mahasiswi D-IV Keselamatan dan Kesehatan Kerja.', requirements: ['Seminar Nasional K3', 'Sharing Session', 'Paper Sharing and Learning', 'Training K3', 'Pojok Prestasi'] },
-    { id: 4, title: 'Departemen HUBLU', description: 'Menjalin dan menjaga hubungan strategis dari lingkup internal dengan mitra eksternal.', requirements: ['K3 Roadshow', 'Relation Work Program', 'OSH Welcoming', 'Devotion Public Occupational Safety and Health', 'Kajian Aksi Strategis'] },
-    { id: 5, title: 'Departemen MEDINFO', description: 'Mengelola dan mengembangkan citra publik (branding) serta kanal-kanal komunikasi visual HIMA.', requirements: ['Creative Design', 'Creative Media', 'Copywriting', 'OSH Fair'] },
-    { id: 6, title: 'Departemen EKRAF', description: 'Sebagai penggerak perekonomian organisasi dalam bentuk produksi, kreatif, dan marketing merchandise.', requirements: ['Safe Merch', 'OSHTEN'] },
-    { id: 7, title: 'Departemen SENIORA', description: 'Wadah pengembangan minat dan bakat mahasiswa dalam bidang seni, kreativitas, dan olahraga.', requirements: ['K3 Running Fest', 'Kelas Seni', 'K3 Sport Cup', 'OSH Cup', 'Olahraga Rutin'] }
+    { id: 1, title: 'Departemen Sekretaris Bendahara', description: 'Mengelola dan menata administrasi serta keuangan HIMA K3 UNAIR secara tertib, transparan, dan bertanggung jawab melalui pencatatan, pengarsipan, serta pengelolaan dana organisasi guna mendukung kelancaran dan keberlangsungan seluruh program kerja.', requirements: ['Pelatihan Kesekretariatan dan Kebendaharaan', 'Musma GD dan AD/ART'] },
+    { id: 2, title: 'Departemen PSDM', description: 'Berfokus pada pengelolaan dan penguatan hubungan internal organisasi demi terjalinnya komunikasi yang baik serta sdm organisasi yang berkompeten guna menguatkan nilai kontribusi mahasiswa baik untuk HIMA maupun Program Studi K3', requirements: ['Upgrading', 'OSH Student Gathering', 'Dies Natalis K3', 'Shield', 'LKMM-Pra TD', 'Welcome Wisudawan'] },
+    { id: 3, title: 'Departemen ILPRES', description: 'Menyelenggarakan program kerja yang berkaitan dengan bidang keilmuan dan prestasi Mahasiswa-Mahasiswi D-IV Keselamatan dan Kesehatan Kerja yang dikemas dengan lingkup program kerja internal hingga eksternal yang menaungi lingkup prestasi dan informasi untuk Program Studi.', requirements: ['Seminar Nasional K3', 'Sharing Session', 'Paper Sharing and Learning', 'Training K3', 'Pojok Prestasi'] },
+    { id: 4, title: 'Departemen HUBLU', description: 'Menjalin dan menjaga hubungan strategis dari lingkup internal dengan mitra eksternal yang bertujuan untuk menjadikan HIMA K3 UNAIR menjadi organisasi yang kolaboratif dengan memperluas wawasan serta jaring  relasi dengan pihak eksternal.', requirements: ['K3 Roadshow', 'Work Relation Program', 'OSH Welcoming', 'Devotion Public Occupational Safety and Health', 'Kajian Aksi Strategis'] },
+    { id: 5, title: 'Departemen MEDINFO', description: 'Mengelola dan mengembangkan citra publik (branding) serta kanal-kanal komunikasi visual HIMA. Bertanggung jawab atas produksi konten, desain grafis, dan dokumentasi visual yang informatif, menarik, dan relevan untuk mendukung diseminasi informasi, publikasi kegiatan, serta membangun identitas organisasi yang profesional.', requirements: ['Creative Design', 'Creative Media', 'Copywriting', 'OSH Fair'] },
+    { id: 6, title: 'Departemen EKRAF', description: 'Sebagai penggerak perekonomian organisasi dalam bentuk produksi, kreatif, dan marketing merchandise serta bertanggung jawab sebagai wadah untuk menaungi minat dan bakat  Mahasiswa/i di bidang kewirausahaan.', requirements: ['Safe Merch', 'OSHTEN'] },
+    { id: 7, title: 'Departemen SENIORA', description: 'Menjadi wadah pengembangan minat dan bakat mahasiswa dalam bidang seni, kreativitas, dan olahraga. Berperan aktif dalam memfasilitasi kegiatan yang mendukung terciptanya keseimbangan fisik dan mental serta semangat sportivitas dan ekspresi diri di kalangan anggota HIMA dan Program Studi.', requirements: ['K3 Running Fest', 'Kelas Seni', 'K3 Sport Cup', 'OSH Cup', 'Olahraga Rutin'] }
   ];
 
   const timeline = [
     { date: '05-10 Januari 2026', title: 'Pendaftaran', description: 'Periode pendaftaran open recruitment dibuka' },
-    { date: '11-14 Januari 2026', title: 'Wawancara', description: 'Wawancara dengan Departemen Pilihan' },
+    { date: '11-14 Januari 2026', title: 'Wawancara', description: 'Wawancara dengan departemen pilihan' },
     { date: '17 Januari 2026', title: 'Pengumuman', description: 'Pengumuman hasil seleksi' }
   ];
 
@@ -342,18 +343,24 @@ export default function App() {
         </div>
       </section>
 
-      {/* Contact Section */}
-      <section id="contact" className="py-20 px-4 bg-gradient-to-br from-[#0D652D] to-[#34A853] text-white scroll-mt-20">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="mb-4 text-3xl font-bold">Hubungi Kami</h2>
-          <p className="mb-12 text-white/90">Jangan ragu untuk menghubungi kami jika ada pertanyaan seputar rekrutmen</p>
-          <div className="inline-flex bg-white/10 backdrop-blur-md rounded-2xl p-8 hover:bg-white/20 transition-colors cursor-pointer group">
+     {/* Contact Section - Versi Compact */}
+      <section id="contact" className="py-12 px-4 bg-gradient-to-br from-[#0D652D] to-[#34A853] text-white scroll-mt-20">
+        <div className="max-w-2xl mx-auto text-center">
+          <h2 className="mb-2 text-2xl font-bold">Hubungi Kami</h2>
+          <p className="mb-6 text-sm text-white/90">Ada pertanyaan seputar rekrutmen? Jangan ragu untuk menghubungi kami.</p>
+          
+          <div className="inline-flex bg-white/10 backdrop-blur-md rounded-xl p-6 hover:bg-white/20 transition-colors cursor-pointer group border border-white/10">
             <div className="flex flex-col items-center">
-                <div className="w-16 h-16 mb-4 flex items-center justify-center bg-white/20 rounded-full group-hover:scale-110 transition-transform">
-                <Instagram className="w-10 h-10 text-white" />
+                <div className="w-12 h-12 mb-3 flex items-center justify-center bg-white/20 rounded-full group-hover:scale-110 transition-transform">
+                   <Instagram className="w-6 h-6 text-white" />
                 </div>
-                <p className="text-white font-medium mb-4">@himak3unair</p>
-                <a href="https://instagram.com/himak3unair" target="_blank" rel="noreferrer" className="px-6 py-2 bg-white text-[#0D652D] rounded-full font-bold text-sm hover:shadow-lg transition-all">
+                <p className="text-white font-semibold mb-3">@himak3unair</p>
+                <a 
+                  href="https://instagram.com/himak3unair" 
+                  target="_blank" 
+                  rel="noreferrer" 
+                  className="px-5 py-1.5 bg-white text-[#0D652D] rounded-full font-bold text-xs hover:shadow-lg transition-all transform hover:-translate-y-0.5"
+                >
                     Kunjungi Profil
                 </a>
             </div>

@@ -1,4 +1,4 @@
-import { CheckCircle } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 
 interface DivisionCardProps {
   title: string;
@@ -22,7 +22,7 @@ export function DivisionCard({ title, description, requirements }: DivisionCardP
         <p className="text-sm font-medium text-gray-700">Proker/Agenda:</p>
         {requirements.map((req, index) => (
           <div key={index} className="flex items-start gap-2">
-            <CheckCircle className="w-4 h-4 text-[#34A853] flex-shrink-0 mt-0.5" />
+            <Sparkles className="w-4 h-4 text-[#34A853] flex-shrink-0 mt-0.5" />
             <span className="text-sm text-gray-600 leading-snug">{req}</span>
           </div>
         ))}

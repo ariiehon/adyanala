@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Send, Upload, CheckCircle, Loader2 } from 'lucide-react';
+import { Send, Upload, CheckCircle, Loader2, MessageCircle } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
 
@@ -42,8 +42,15 @@ export function ApplicationForm({ divisions }: ApplicationFormProps) {
 
   const supabase = createClient(projectId, publicAnonKey);
 
-  const needsPortfolio = (formData.department1 === 'Departemen MEDINFO' && formData.proker1 !== 'Copywriting') ||
-                         (formData.department2 === 'Departemen MEDINFO' && formData.proker2 !== 'Copywriting');
+const needsPortfolio =
+  (!isSekben1 &&
+    formData.department1 === 'Departemen MEDINFO' &&
+    formData.proker1 !== 'Copywriting' &&
+    !!formData.proker1) ||
+  (!isSekben2 &&
+    formData.department2 === 'Departemen MEDINFO' &&
+    formData.proker2 !== 'Copywriting' &&
+    !!formData.proker2);
 
   const nonSekbenDepartments = divisions.filter(d => d.id !== 1);
 
@@ -83,7 +90,7 @@ export function ApplicationForm({ divisions }: ApplicationFormProps) {
     return uploadedFiles;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
@@ -97,6 +104,27 @@ export function ApplicationForm({ divisions }: ApplicationFormProps) {
         throw new Error('Portofolio wajib untuk proker MEDINFO');
       }
 
+      // 👇👇👇 LOGIKA PERBAIKAN DATA SEKBEN (SPECIAL CASE) 👇👇👇
+      const finalFormData = { ...formData }; // Kita copy dulu biar form asli di layar gak berubah
+
+      // Cek Pilihan 1: Kalau dia centang Sekben
+      if (isSekben1) {
+        // Paksa Departemen jadi Sekben
+        finalFormData.department1 = "Departemen Sekretaris Bendahara";
+        // Gabungkan Jabatan + Departemen Penempatan ke dalam kolom Proker
+        // Contoh hasil: "Sekretaris - Departemen PSDM"
+        finalFormData.proker1 = `${formData.proker1} - ${formData.department1}`; 
+      }
+
+      // Cek Pilihan 2: Kalau dia centang Sekben
+      if (isSekben2) {
+        finalFormData.department2 = "Departemen Sekretaris Bendahara";
+        // Contoh hasil: "Bendahara - Departemen ACARA"
+        finalFormData.proker2 = `${formData.proker2} - ${formData.department2}`;
+      }
+      // 👆👆👆 SELESAI PERBAIKAN 👆👆👆
+
+
       const uploadedFiles = await uploadFilesToStorage(formData.nim);
 
       const response = await fetch(
@@ -107,8 +135,9 @@ export function ApplicationForm({ divisions }: ApplicationFormProps) {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${publicAnonKey}`,
           },
+          // 👇 KITA KIRIM finalFormData YANG SUDAH DIPERBAIKI
           body: JSON.stringify({
-            ...formData,
+            ...finalFormData, 
             files: uploadedFiles,
           }),
         }
@@ -124,30 +153,27 @@ export function ApplicationForm({ divisions }: ApplicationFormProps) {
       setApplicationId(data.applicationId);
       setSubmitted(true);
 
-      setTimeout(() => {
-        setSubmitted(false);
-        setApplicationId('');
-        setFormData({
-          fullName: '',
-          nim: '',
-          email: '',
-          phone: '',
-          semester: '2',
-          ipk: '-',
-          motivation: '-',
-          department1: '',
-          proker1: '',
-          department2: '',
-          proker2: '',
-          experience: ''
-        });
-        setIsSekben1(false);
-        setIsSekben2(false);
-        setKtmFile(null);
-        setSuratKomitmenFile(null);
-        setCvFile(null);
-        setPortfolioFile(null);
-      }, 5000);
+      // Reset form state (tanpa mematikan tampilan sukses)
+      setFormData({
+        fullName: '',
+        nim: '',
+        email: '',
+        phone: '',
+        semester: '2',
+        ipk: '-',
+        motivation: '-',
+        department1: '',
+        proker1: '',
+        department2: '',
+        proker2: '',
+        experience: ''
+      });
+      setIsSekben1(false);
+      setIsSekben2(false);
+      setKtmFile(null);
+      setSuratKomitmenFile(null);
+      setCvFile(null);
+      setPortfolioFile(null);
 
     } catch (err) {
       console.error('Error:', err);
@@ -156,7 +182,7 @@ export function ApplicationForm({ divisions }: ApplicationFormProps) {
       setLoading(false);
     }
   };
-
+  
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({
       ...formData,
@@ -170,17 +196,47 @@ export function ApplicationForm({ divisions }: ApplicationFormProps) {
         <div className="w-20 h-20 bg-gradient-to-r from-[#0D652D] to-[#34A853] rounded-full flex items-center justify-center mx-auto mb-6">
           <CheckCircle className="w-12 h-12 text-white" />
         </div>
-        <h3 className="mb-4 text-[#0D652D]">Pendaftaran Berhasil!</h3>
-        <p className="text-gray-600 mb-2">
-          Terima kasih telah mendaftar. Kami akan menghubungi Anda melalui email untuk tahap selanjutnya.
+        
+        <h3 className="text-2xl font-bold text-[#0D652D] mb-2">Pendaftaran Berhasil!</h3>
+        
+        <p className="text-gray-600 mb-6">
+          Terima kasih telah mendaftar. Data kamu sudah kami terima.
         </p>
-        <div className="bg-gray-50 rounded-lg p-4 mb-4 inline-block">
-          <p className="text-sm text-gray-500 mb-1">ID Pendaftaran Anda:</p>
-          <p className="font-mono text-[#0D652D]">{applicationId}</p>
+
+        {/* ID Pendaftaran */}
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-8 inline-block">
+          <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">ID Pendaftaran Anda</p>
+          <p className="font-mono text-xl font-bold text-[#0D652D] tracking-widest">{applicationId}</p>
         </div>
-        <p className="text-sm text-gray-500">
-          Jangan lupa cek email dan WhatsApp secara berkala
-        </p>
+
+       {/* 👇 TOMBOL GRUP WHATSAPP YANG SUDAH DIPERBAIKI WARNANYA 👇 */}
+<div className="mb-8">
+  <p className="text-sm text-gray-600 mb-3 font-medium">
+    Wajib bergabung ke Grup WhatsApp untuk informasi selanjutnya.
+  </p>
+  
+  <a
+    href="https://chat.whatsapp.com/LINK_GRUP_WA_KAMU_DISINI" // 👈 JANGAN LUPA GANTI LINK INI LAGI
+    target="_blank"
+    rel="noopener noreferrer"
+    // PERUBAHAN DISINI:
+    // 1. Menggunakan 'bg-green-600' dan 'hover:bg-green-700' (warna standar Tailwind)
+    // 2. Menambahkan '!text-white' (tanda seru untuk memaksa teks warna putih)
+    className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 !text-white font-bold rounded-full shadow-md hover:shadow-lg transition-all duration-300"
+  >
+    <MessageCircle className="w-5 h-5" />
+    <span>Gabung Grup WhatsApp</span>
+  </a>
+</div>
+
+        <div className="border-t pt-6">
+          <button 
+            onClick={() => setSubmitted(false)}
+            className="text-sm text-gray-400 hover:text-gray-600 underline"
+          >
+            Kembali ke Formulir (Daftar Baru)
+          </button>
+        </div>
       </div>
     );
   }
@@ -220,64 +276,147 @@ export function ApplicationForm({ divisions }: ApplicationFormProps) {
           <h3 className="mb-4 text-[#0D652D]">Pilihan Program Kerja</h3>
 
           <div className="mb-8 p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-200">
-            <div className="flex items-center justify-between mb-4">
-              <h4 className="font-medium text-gray-800">📌 Pilihan 1</h4>
-              <label className="flex items-center cursor-pointer group">
-                <input type="checkbox" checked={isSekben1} onChange={(e) => { setIsSekben1(e.target.checked); setFormData({ ...formData, department1: '', proker1: '' }); }} className="w-4 h-4 rounded border-orange-300 text-orange-600" />
-                <span className="ml-2 text-xs text-orange-700 font-medium">Daftar Departemen Sekben</span>
-              </label>
-            </div>
+  <div className="flex items-center justify-between mb-4">
+    <h4 className="font-medium text-gray-800">📌 Pilihan 1</h4>
+    <label className="flex items-center cursor-pointer group">
+      <input
+        type="checkbox"
+        checked={isSekben1}
+        onChange={(e) => {
+          setIsSekben1(e.target.checked);
+          setFormData({ ...formData, department1: '', proker1: '' });
+        }}
+        className="w-4 h-4 rounded border-orange-300 text-orange-600"
+      />
+      <span className="ml-2 text-xs text-orange-700 font-medium">
+        Daftar Departemen Sekben
+      </span>
+    </label>
+  </div>
 
-            {isSekben1 ? (
-              <div className="space-y-4">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <label htmlFor="department1-sekben" className="block text-sm mb-2 text-gray-700">Departemen Penempatan *</label>
-                    <select id="department1-sekben" name="department1" value={formData.department1} onChange={(e) => setFormData({ ...formData, department1: e.target.value })} required className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#34A853] focus:border-transparent outline-none bg-white">
-                      <option value="">Pilih Departemen</option>
-                      {nonSekbenDepartments.map((div) => (
-                        <option key={div.id} value={div.title}>{div.title}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label htmlFor="sekben-role" className="block text-sm mb-2 text-gray-700">Posisi *</label>
-                    <select id="sekben-role" name="proker1" value={formData.proker1} onChange={(e) => setFormData({ ...formData, proker1: e.target.value })} required className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#34A853] focus:border-transparent outline-none bg-white">
-                      <option value="">Pilih Posisi</option>
-                      <option value="Sekretaris">Sekretaris</option>
-                      <option value="Bendahara">Bendahara</option>
-                    </select>
-                  </div>
-                </div>
-                {formData.department1 && formData.proker1 && (
-                  <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                    <p className="text-sm text-orange-800">Kamu mendaftar sebagai <strong>{formData.proker1} {formData.department1}</strong></p>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="department1" className="block text-sm mb-2 text-gray-700">Departemen *</label>
-                  <select id="department1" name="department1" value={formData.department1} onChange={(e) => setFormData({ ...formData, department1: e.target.value, proker1: '' })} required className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#34A853] focus:border-transparent outline-none bg-white">
-                    <option value="">Pilih Departemen</option>
-                    {nonSekbenDepartments.map((div) => (
-                      <option key={div.id} value={div.title}>{div.title}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label htmlFor="proker1" className="block text-sm mb-2 text-gray-700">Program Kerja *</label>
-                  <select id="proker1" name="proker1" value={formData.proker1} onChange={(e) => setFormData({ ...formData, proker1: e.target.value })} required disabled={!formData.department1} className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#34A853] focus:border-transparent outline-none bg-white disabled:bg-gray-100">
-                    <option value="">{formData.department1 ? 'Pilih proker' : 'Pilih departemen dulu'}</option>
-                    {formData.department1 && getProkersByDepartment(formData.department1).filter(proker => !(formData.department1 === formData.department2 && proker === formData.proker2)).map((proker, index) => (
-                      <option key={index} value={proker}>{proker}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            )}
-          </div>
+  {isSekben1 ? (
+    <div className="space-y-4">
+      <div className="grid md:grid-cols-2 gap-4">
+        <div>
+          <label
+            htmlFor="department1-sekben"
+            className="block text-sm mb-2 text-gray-700"
+          >
+            Departemen Penempatan *
+          </label>
+          <select
+            id="department1-sekben"
+            name="department1"
+            value={formData.department1}
+            onChange={(e) =>
+              setFormData({ ...formData, department1: e.target.value })
+            }
+            required
+            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#34A853] focus:border-transparent outline-none bg-white"
+          >
+            <option value="">Pilih Departemen</option>
+            {nonSekbenDepartments.map((div) => (
+              <option key={div.id} value={div.title}>
+                {div.title}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label
+            htmlFor="sekben-role"
+            className="block text-sm mb-2 text-gray-700"
+          >
+            Posisif i *
+          </label>
+          <select
+            id="sekben-role"
+            name="proker1"
+            value={formData.proker1}
+            onChange={(e) =>
+              setFormData({ ...formData, proker1: e.target.value })
+            }
+            required
+            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#34A853] focus:border-transparent outline-none bg-white"
+          >
+            <option value="">Pilih Posisi</option>
+            <option value="Sekretaris">Sekretaris</option>
+            <option value="Bendahara">Bendahara</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  ) : (
+    <div className="grid md:grid-cols-2 gap-4">
+      <div>
+        <label
+          htmlFor="department1"
+          className="block text-sm mb-2 text-gray-700"
+        >
+          Departemen *
+        </label>
+        <select
+          id="department1"
+          name="department1"
+          value={formData.department1}
+          onChange={(e) =>
+            setFormData({
+              ...formData,
+              department1: e.target.value,
+              proker1: '',
+            })
+          }
+          required
+          className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#34A853] focus:border-transparent outline-none bg-white"
+        >
+          <option value="">Pilih Departemen</option>
+          {nonSekbenDepartments.map((div) => (
+            <option key={div.id} value={div.title}>
+              {div.title}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label
+          htmlFor="proker1"
+          className="block text-sm mb-2 text-gray-700"
+        >
+          Program Kerja *
+        </label>
+        <select
+          id="proker1"
+          name="proker1"
+          value={formData.proker1}
+          onChange={(e) =>
+            setFormData({ ...formData, proker1: e.target.value })
+          }
+          required
+          disabled={!formData.department1}
+          className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#34A853] focus:border-transparent outline-none bg-white disabled:bg-gray-100"
+        >
+          <option value="">
+            {formData.department1 ? 'Pilih proker' : 'Pilih departemen dulu'}
+          </option>
+          {formData.department1 &&
+            getProkersByDepartment(formData.department1)
+              .filter(
+                (proker) =>
+                  !(
+                    formData.department1 === formData.department2 &&
+                    proker === formData.proker2
+                  ),
+              )
+              .map((proker, index) => (
+                <option key={index} value={proker}>
+                  {proker}
+                </option>
+              ))}
+        </select>
+      </div>
+    </div>
+  )}
+</div>
 
           <div className="mb-4 p-6 bg-gradient-to-br from-blue-50 to-sky-50 rounded-xl border border-blue-200">
             <div className="flex items-center justify-between mb-4">

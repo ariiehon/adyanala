@@ -13,6 +13,10 @@ interface ApplicationResult {
   department2?: string;
   status?: 'pending' | 'accepted' | 'rejected';
   submittedAt?: string;
+  assignedDivision?: string;
+  final_proker?: string;
+  final_role?: string;
+
 }
 
 export function StatusChecker() {
@@ -33,7 +37,7 @@ export function StatusChecker() {
 
     try {
       const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/server/applications/check-status`,
+        `https://ktarcapgygzzbkcxaosr.supabase.co/functions/v1/server/applications/check-status`,
         {
           method: 'POST',
           headers: {
@@ -68,7 +72,7 @@ export function StatusChecker() {
           bg: 'bg-green-50',
           border: 'border-green-200',
           label: 'Selamat! Anda Diterima 🎉',
-          message: 'Anda telah diterima sebagai anggota Himakesker. Kami akan menghubungi Anda segera melalui WhatsApp untuk informasi lebih lanjut.'
+          message: 'Anda telah diterima sebagai pengurus HIMA K3 UNAIR. Kami akan menghubungi Anda segera melalui WhatsApp untuk informasi lebih lanjut.'
         };
       case 'rejected':
         return {
@@ -218,73 +222,34 @@ export function StatusChecker() {
 
                 {/* Proker Choices */}
                 <div className="bg-gradient-to-r from-blue-50 to-green-50 border border-blue-200 rounded-lg p-4">
-                  <p 
-                    className="text-sm font-medium text-gray-700 mb-3"
-                    style={{ fontFamily: "'Poppins', sans-serif" }}
-                  >
-                    Pilihan Program Kerja
-                  </p>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <p 
-                        className="text-xs text-gray-500 mb-1"
-                        style={{ fontFamily: "'Poppins', sans-serif" }}
-                      >
-                        Pilihan 1
-                      </p>
-                      <p 
-                        className="text-sm font-medium text-gray-900"
-                        style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 600 }}
-                      >
-                        {result.proker1}
-                      </p>
-                      <p 
-                        className="text-xs text-[#34A853] mt-1"
-                        style={{ fontFamily: "'Poppins', sans-serif" }}
-                      >
-                        {result.department1}
-                      </p>
-                    </div>
-                    <div>
-                      <p 
-                        className="text-xs text-gray-500 mb-1"
-                        style={{ fontFamily: "'Poppins', sans-serif" }}
-                      >
-                        Pilihan 2
-                      </p>
-                      {result.proker2 ? (
-                        <>
-                          <p 
-                            className="text-sm font-medium text-gray-900"
-                            style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 600 }}
-                          >
-                            {result.proker2}
-                          </p>
-                          <p 
-                            className="text-xs text-[#34A853] mt-1"
-                            style={{ fontFamily: "'Poppins', sans-serif" }}
-                          >
-                            {result.department2}
-                          </p>
-                        </>
-                      ) : (
-                        <>
-                          <p 
-                            className="text-sm font-medium text-gray-900"
-                            style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 600 }}
-                          >
-                            {result.department2}
-                          </p>
-                          <p 
-                            className="text-xs text-orange-600 mt-1"
-                            style={{ fontFamily: "'Poppins', sans-serif" }}
-                          >
-                            (Departemen cadangan)
-                          </p>
-                        </>
-                      )}
-                    </div>
-                  </div>
+                 <h3 className="mt-6 mb-3 font-semibold text-gray-800">
+  Penempatan Akhir
+</h3>
+
+<div className="grid md:grid-cols-2 gap-4">
+  <div className="bg-gray-50 border rounded-lg p-4">
+    <p className="text-xs font-semibold text-gray-500 uppercase">
+      Departemen
+    </p>
+    <p className="font-medium text-gray-800">
+      {result.assignedDivision || 'Belum ditetapkan'}
+    </p>
+  </div>
+
+  <div className="bg-gray-50 border rounded-lg p-4">
+    <p className="text-xs font-semibold text-gray-500 uppercase">
+      Proker & Jabatan
+    </p>
+    {result.final_proker ? (
+      <p className="font-medium text-gray-800">
+        {result.final_proker} — {result.final_role || 'Staff'}
+      </p>
+    ) : (
+      <p className="text-gray-500 text-sm">Belum ditetapkan</p>
+    )}
+  </div>
+</div>
+
                 </div>
 
                 {/* Status Card */}
