@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
+import { createClient } from '@supabase/supabase-js';
 import { Users, Download, CheckCircle, XCircle, Clock, Search, LogOut, Briefcase, FileText } from 'lucide-react';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
 import * as XLSX from 'xlsx';
+const SUPABASE_FUNCTION_URL =
+  'https://ktarcapgygzzbkcxaosr.supabase.co/functions/v1/server/applications';
 
 interface Application {
   id: string;
@@ -18,8 +21,9 @@ interface Application {
   motivation: string;
   experience: string;
   status: 'pending' | 'accepted' | 'rejected';
-  submittedAt: string;
-  assignedDivision?: string;
+  created_at: string;
+  assigned_division?: string;
+  division1?: string;
   final_proker?: string;
   final_role?: string;
   files?: {
@@ -52,6 +56,7 @@ export function AdminDashboard({ isAuthenticated, onLogout }: AdminDashboardProp
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+
    useEffect(() => {
     if (applications.length > 0) {
       console.log('Sample application:', applications[0]);
@@ -79,13 +84,15 @@ export function AdminDashboard({ isAuthenticated, onLogout }: AdminDashboardProp
     }
   }, [isAuthenticated]);
 
- // ✅ Set nilai default modal ketika selectedApplication berubah
 useEffect(() => {
   if (selectedApplication) {
-    // kalau sudah pernah ditetapkan, pakai assignedDivision, kalau belum pakai pilihan 1
+    // 👇 Cek assigned_division (DB) atau assignedDivision (Legacy)
     setAssignedDivision(
-      selectedApplication.assignedDivision || selectedApplication.department1 || ''
+      selectedApplication.assigned_division || 
+      selectedApplication.assignedDivision || 
+      selectedApplication.department1 || ''
     );
+    // ... sisa kode ...
 
     const finalProkerSource =
       selectedApplication.final_proker || selectedApplication.proker1;
@@ -286,14 +293,14 @@ setApplications(
 
 // Tambahkan fungsi ini di dalam component AdminDashboard
 const exportToExcel = () => {
-  if (!applications.length) {
+  if (!filteredApplications.length) {
     alert('Tidak ada data untuk diexport');
     return;
   }
 
   // Transform data ke format yang rapi untuk Excel
-  const excelData = applications.map((app) => ({
-    'No': applications.indexOf(app) + 1,
+  const excelData = filteredApplications.map((app) => ({
+    'No': filteredApplications.indexOf(app) + 1,
     'Nama Lengkap': app.full_name,
     'NIM': app.nim,
     'Email': app.email,
@@ -302,7 +309,11 @@ const exportToExcel = () => {
     'Proker 1': app.proker1 || '-',
     'Departemen 2': app.department2 || '-',
     'Proker 2': app.proker2 || '-',
-    'Jabatan Final': app.final_eole || 'Staff',
+    'KTM URL': (app as any).ktm_url || '',
+    'CV URL': (app as any).cv_url || '',
+    'Surat Komitmen URL': (app as any).surat_komitmen_url || '',
+    'Portofolio URL': (app as any).portfolio_url || '',
+    'Jabatan Final': app.final_role || '-',
     'Proker Final': app.final_proker || '-',
     'Status': app.status?.toUpperCase() || 'PENDING',
     'Tanggal Daftar': new Date(app.created_at).toLocaleDateString('id-ID')
@@ -324,6 +335,10 @@ const exportToExcel = () => {
     { wch: 15 },  // Proker 1
     { wch: 18 },  // Departemen 2
     { wch: 15 },  // Proker 2
+    { wch: 30 },  // KTM URL
+    { wch: 30 },  // CV URL
+    { wch: 30 },  // Surat Komitmen URL
+    { wch: 30 },  // Portofolio URL
     { wch: 15 },  // Jabatan Final
     { wch: 15 },  // Proker Final
     { wch: 12 },  // Status
@@ -588,9 +603,9 @@ const exportToExcel = () => {
 </td>
 
 <td className="p-4 text-sm">
-  {app.status === 'accepted' && app.assignedDivision && app.final_proker ? (
+  {app.status === 'accepted' && app.assigned_division && app.final_proker ? (
     <>
-      <div className="font-medium">{app.assignedDivision}</div>
+      <div className="font-medium">{app.assigned_division}</div>
       <div className="text-xs text-gray-600">
         {app.final_proker} — {app.final_role || 'Staff'}
       </div>
@@ -821,7 +836,7 @@ const exportToExcel = () => {
                           {selectedApplication.proker2 && (
                             <option value={selectedApplication.proker2}>Pilihan 2: {selectedApplication.proker2}</option>
                           )}
-                          <option value="Proker Lainnya Umum Departemen">Lainnya Umum Departemen</option>
+                          <option value="Proker Lainnya">Proker Lainnya</option>
                         </select>
                       </div>
 

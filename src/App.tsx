@@ -293,7 +293,7 @@ const handleAdminLogout = () => {
                   📄 Persyaratan Administrasi
               </h3>
               <ul className="space-y-4">
-                {['Mahasiswa aktif D4 K3 Universitas Airlangga', 'IPK minimal 3.00 (Semester terakhir)', 'Belum pernah terlibat dalam tindak pelanggaran berat', 'Scan KTM dan KRS semester aktif', 'Berkomitmen penuh selama satu periode kepengurusan'].map((item, index) => (
+                {['Mahasiswa aktif D4 K3 Universitas Airlangga', 'Belum pernah terlibat dalam tindak pelanggaran berat', 'Scan KTM, CV, Surat Komitmen, dan Portofolio bagi pendaftar departemen Medinfo', 'Berkomitmen penuh selama satu periode kepengurusan'].map((item, index) => (
                   <li key={index} className="flex gap-3 items-start">
                     <div className="w-6 h-6 rounded-full bg-gradient-to-r from-[#0D652D] to-[#34A853] flex items-center justify-center flex-shrink-0 mt-0.5 shadow-sm">
                         <span className="text-white text-xs font-bold">{index + 1}</span>

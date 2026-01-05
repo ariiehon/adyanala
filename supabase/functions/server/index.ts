@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, GET, OPTIONS, PUT, DELETE, PATCH',
 }
 
-// --- FUNGSI KIRIM EMAIL (Tidak Berubah) ---
+// --- FUNGSI KIRIM EMAIL (UTUH SEPERTI PUNYA LO) ---
 const sendEmail = async (toEmail: string, name: string, status: string, division: string, role: string, proker: string) => {
   const resendKey = Deno.env.get('RESEND_API_KEY')
   if (!resendKey) return
@@ -83,20 +83,24 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // --- INISIALISASI DATABASE ---
-    // Menggunakan 'SERVICE_ROLE_KEY' sesuai secret barumu
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SERVICE_ROLE_KEY') ?? '' 
     )
 
-    // 1. SUBMIT PENDAFTARAN (POST)
+    // 1. SUBMIT PENDAFTARAN (POST) + FIX UNTUK ERROR MERAH
     if (req.method === 'POST' && url.pathname.includes('/submit')) {
       const body = await req.json()
       
+      // Fix: Hapus field yang berisi "-" agar tidak bentrok dengan tipe data database
+      const cleanData = { ...body }
+      if (cleanData.ipk === '-') delete cleanData.ipk
+      if (cleanData.semester === '-') delete cleanData.semester
+      if (cleanData.motivation === '-') delete cleanData.motivation
+
       const { data, error } = await supabase
         .from('applications')
-        .insert(body)
+        .insert(cleanData)
         .select()
         .single()
 
@@ -107,7 +111,7 @@ Deno.serve(async (req) => {
       })
     }
 
-    // 2. CEK STATUS (POST)
+    // 2. CEK STATUS (POST) - UTUH
     if (req.method === 'POST' && url.pathname.includes('/check-status')) {
       const { identifier } = await req.json()
       
@@ -121,42 +125,46 @@ Deno.serve(async (req) => {
 
       let result = { found: false }
       
-      if (data) {
-        result = {
-          found: true,
-          fullName: data.fullName,
-          nim: data.nim,
-          email: data.email,
-          proker1: data.proker1,
-          department1: data.department1,
-          proker2: data.proker2,
-          department2: data.department2,
-          status: data.status,
-          submittedAt: data.created_at
-        }
-      }
+  if (data) {
+  result = {
+    found: true,
+    fullName: data.full_name,             // ← nama kolom di DB
+    nim: data.nim,
+    email: data.email,
+    proker1: data.proker1,
+    department1: data.department1,
+    proker2: data.proker2,
+    department2: data.department2,
+    status: data.status,
+    submittedAt: data.created_at,
+    assignedDivision: data.assigned_division, // ← TAMBAH INI
+    final_proker: data.final_proker,          // ← TAMBAH INI
+    final_role: data.final_role,              // ← TAMBAH INI
+  }
+}
+
 
       return new Response(JSON.stringify({ success: true, result }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
-    // 3. UPDATE STATUS ADMIN (PATCH)
+    // 3. UPDATE STATUS ADMIN (PATCH) - UTUH
     if (req.method === 'PATCH' && url.pathname.includes('/status')) {
       const pathParts = url.pathname.split('/')
       const id = pathParts[pathParts.length - 2]
       
       const body = await req.json()
-      const { status, assignedDivision, finalProker, finalRole } = body
+      const { status, assignedDivision, final_proker, final_role } = body
 
       const { data, error } = await supabase
         .from('applications')
         .update({ 
           status: status, 
-          department1: assignedDivision,
+          assigned_division: assignedDivision,
           division1: assignedDivision,
-          final_proker: finalProker, 
-          final_role: finalRole      
+          final_proker: final_proker, 
+          final_role: final_role      
         })
         .eq('id', id)
         .select()
@@ -164,15 +172,73 @@ Deno.serve(async (req) => {
 
       if (error) throw error
 
-      // Kirim Email
-      await sendEmail(data.email, data.fullName, status, assignedDivision, finalRole, finalProker).catch(console.error)
+      // Kirim Email (Panggil fungsi sendEmail di atas)
+      await sendEmail(data.email, data.full_name, status, assignedDivision, final_role, final_proker).catch(console.error)
 
       return new Response(JSON.stringify({ success: true, data }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
+ 
+        // 3b. UPDATE STATUS ADMIN (POST /update-status) - DIPAKAI AdminDashboard
+    if (
+      req.method === 'POST' &&
+      url.pathname.includes('/update-status')
+    ) {
+      const {
+        applicationId,
+        status,
+        assignedDivision,
+        finalProker,
+        finalRole,
+      } = await req.json()
 
-    // 4. LIST DATA ADMIN (GET)
+      // 1. Ambil data pendaftar (butuh email & nama)
+      const { data: appData, error: fetchError } = await supabase
+        .from('applications')
+        .select('id, fullName, email')
+        .eq('id', applicationId)
+        .single()
+
+      if (fetchError || !appData) {
+        throw new Error('Data pendaftar tidak ditemukan')
+      }
+
+      // 2. Update status + penempatan final
+      const { data, error: updateError } = await supabase
+        .from('applications')
+        .update({
+          status: status,
+          assigned_division: status === 'accepted' ? assignedDivision : null,
+          division1: status === 'accepted' ? assignedDivision : null,
+          final_proker: status === 'accepted' ? finalProker : null,
+          final_role: status === 'accepted' ? finalRole : null,
+        })
+        .eq('id', applicationId)
+        .select()
+        .single()
+
+      if (updateError) throw updateError
+
+      // 3. Kirim email dengan data final
+      await sendEmail(
+        appData.email,
+        appData.fullName,
+        status,
+        status === 'accepted' ? assignedDivision : '',
+        status === 'accepted' ? finalRole : '',
+        status === 'accepted' ? finalProker : '',
+      ).catch(console.error)
+
+      return new Response(
+        JSON.stringify({ success: true, data }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      )
+    }
+
+    // 4. LIST DATA ADMIN (GET) - UTUH
     if (req.method === 'GET' && url.pathname.includes('/list')) {
       const { data, error } = await supabase
         .from('applications')
@@ -185,7 +251,7 @@ Deno.serve(async (req) => {
       })
     }
 
-    // 5. STATS ADMIN (GET)
+    // 5. STATS ADMIN (GET) - UTUH
     if (req.method === 'GET' && url.pathname.includes('/stats')) {
       const { data: apps } = await supabase.from('applications').select('status, department1')
       
