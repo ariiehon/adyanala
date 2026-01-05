@@ -193,7 +193,7 @@ export function ApplicationForm({ divisions }: ApplicationFormProps) {
           </p>
           
           <a
-            href="https://chat.whatsapp.com/LINK_GRUP_WA_KAMU_DISINI" 
+            href="https://chat.whatsapp.com/CQ7e4GRQowB9NCmyiNEmKh" 
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 !text-white font-bold rounded-full shadow-md hover:shadow-lg transition-all duration-300"
