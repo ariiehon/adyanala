@@ -18,6 +18,8 @@ export default function App() {
 
   const ADMIN_PASSWORD = "Adyanala2026"; 
 
+  const isRegistrationOpen = false; // Ubah ke true jika ingin memperpanjang (extend)
+
   // --- LOGIKA SCROLL SPY ---
   useEffect(() => {
     const handleScroll = () => {
@@ -335,13 +337,37 @@ const handleAdminLogout = () => {
       </section>
 
       {/* Application Form Section */}
-       <section id="form" className="py-20 px-4 scroll-mt-20">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-center mb-4 bg-gradient-to-r from-[#174EA6] to-[#4285F4] bg-clip-text text-transparent font-bold text-[32px] font-[Poppins]">Formulir Pendaftaran</h2>
-          <p className="text-center text-gray-600 mb-12">Isi data dirimu dengan lengkap dan benar</p>
-          <ApplicationForm divisions={divisions} />
+<section id="form" className="py-20 px-4 scroll-mt-20">
+  <div className="max-w-7xl mx-auto">
+    <h2 className="text-center mb-4 bg-gradient-to-r from-[#174EA6] to-[#4285F4] bg-clip-text text-transparent font-bold text-[32px] font-[Poppins]">
+      Formulir Pendaftaran
+    </h2>
+    
+    {isRegistrationOpen ? (
+      <>
+        <p className="text-center text-gray-600 mb-12">Isi data dirimu dengan lengkap dan benar</p>
+        <ApplicationForm divisions={divisions} />
+      </>
+    ) : (
+      <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-xl p-12 text-center border-t-4 border-red-500">
+        <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <Clock className="w-12 h-12 text-red-600" />
         </div>
-      </section>
+        <h3 className="text-2xl font-bold text-gray-800 mb-2">Pendaftaran Ditutup</h3>
+        <p className="text-gray-600 mb-6">
+          Mohon maaf, periode pendaftaran HIMA K3 UNAIR saat ini telah berakhir. 
+          Pantau terus Instagram kami untuk informasi mengenai perpanjangan waktu pendaftaran.
+        </p>
+        <a 
+          href="https://instagram.com/himak3unair" 
+          className="inline-flex items-center gap-2 text-[#0D652D] font-semibold hover:underline"
+        >
+          <Instagram className="w-5 h-5" /> Cek Update di Instagram
+        </a>
+      </div>
+    )}
+  </div>
+</section>
 
      {/* Contact Section - Versi Compact */}
       <section id="contact" className="py-12 px-4 bg-gradient-to-br from-[#0D652D] to-[#34A853] text-white scroll-mt-20">
