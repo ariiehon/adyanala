@@ -4,7 +4,7 @@ import { TimelineItem } from './components/TimelineItem.tsx';
 import { ApplicationForm } from './components/ApplicationForm.tsx';
 import { StatusChecker } from './components/StatusChecker.tsx';
 import { AdminDashboard } from './components/AdminDashboard.tsx'; 
-import { Users, Target, Calendar, FileText, Mail, Lock, ArrowRight, Search, Instagram, Edit, ClipboardList } from 'lucide-react';
+import { Users, Target, Calendar, FileText, Mail, Lock, ArrowRight, Search, Instagram, Edit, ClipboardList, Clock } from 'lucide-react';
 import imgLogoHimaK3 from './assets/logo-hima.png';
 
 export default function App() {
