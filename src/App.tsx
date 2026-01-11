@@ -18,7 +18,7 @@ export default function App() {
 
   const ADMIN_PASSWORD = "Adyanala2026"; 
 
-  const isRegistrationOpen = false; // Ubah ke true jika ingin memperpanjang (extend)
+  const isRegistrationOpen = true; // Ubah ke true jika ingin memperpanjang (extend)
 
   // --- LOGIKA SCROLL SPY ---
   useEffect(() => {
