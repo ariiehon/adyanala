@@ -18,7 +18,7 @@ export default function App() {
 
   const ADMIN_PASSWORD = "Adyanala2026"; 
 
-  const isRegistrationOpen = true; // Ubah ke true jika ingin memperpanjang (extend)
+  const isRegistrationOpen = false; // Ubah ke true jika ingin memperpanjang (extend)
 
   // --- LOGIKA SCROLL SPY ---
   useEffect(() => {
@@ -356,14 +356,8 @@ const handleAdminLogout = () => {
         <h3 className="text-2xl font-bold text-gray-800 mb-2">Pendaftaran Ditutup</h3>
         <p className="text-gray-600 mb-6">
           Mohon maaf, periode pendaftaran HIMA K3 UNAIR saat ini telah berakhir. 
-          Pantau terus Instagram kami untuk informasi mengenai perpanjangan waktu pendaftaran.
+  
         </p>
-        <a 
-          href="https://instagram.com/himak3unair" 
-          className="inline-flex items-center gap-2 text-[#0D652D] font-semibold hover:underline"
-        >
-          <Instagram className="w-5 h-5" /> Cek Update di Instagram
-        </a>
       </div>
     )}
   </div>

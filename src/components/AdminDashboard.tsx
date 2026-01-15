@@ -816,6 +816,10 @@ const exportToExcel = () => {
                           onChange={(e) => setAssignedRole(e.target.value)}
                           className="w-full p-2 border rounded-md bg-white font-bold text-blue-700"
                         >
+                          <option value="Ketua Himpunan">Ketua Himpunan</option>
+                          <option value="Wakil Ketua Himpunan">Wakil Ketua Himpunan</option>
+                          <option value="Kepala Departemen">Kepala Departemen</option>
+                          <option value="Steering Committee">Steering Committee</option>
                           <option value="Penanggung Jawab">Penanggung Jawab</option>
                           <option value="Wakil Penanggung Jawab">Wakil Penanggung Jawab</option>
                           <option value="Staff">Staff</option>
